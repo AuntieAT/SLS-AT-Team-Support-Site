@@ -3,33 +3,214 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SLS AT Team Support Site</title>
+    <title>Interactive Sentence Sorting Activity</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        #sentence-input {
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        #sentence-input label {
+            font-size: 16px;
+        }
+
+        #sentence-input input {
+            width: 200px;
+            padding: 5px;
+        }
+
+        #sentence-input button {
+            padding: 5px 15px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        #sortable-container, #sentence-line {
+            display: flex;
+            gap: 20px; /* Further increased space between word blocks */
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        #sortable-container {
+            margin-top: 20px;
+            width: 90%;
+            font-size: 24px;
+        }
+
+        .word-box {
+            padding: 30px; /* Increased padding for larger blocks */
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: grab;
+            text-align: center;
+            font-size: 36px; /* Larger font for the word blocks */
+        }
+
+        #sentence-line {
+            border: 2px dashed #aaa;
+            padding: 20px;
+            min-height: 100px;
+            width: 90%;
+            font-size: 24px;
+            justify-content: center;
+            align-items: center;
+            display: flex;
+            gap: 15px;
+        }
+
+        .placeholder-box {
+            width: auto; /* Dynamically adjust the width */
+            height: auto; /* Dynamically adjust the height */
+            padding: 30px; /* Match padding from .word-box */
+            border: 2px dashed #888;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #fafafa;
+            font-size: 36px; /* Match font size of .word-box */
+        }
+
+        .draggable {
+            user-select: none;
+            transition: transform 0.3s ease; /* Added smoother drag/drop animation */
+        }
+
+        .placeholder {
+            background-color: #d9f7d9;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+
+        #done-button {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <h1>SLS AT Team Support Site</h1>
-    </header>
+    <h1>Sentence Sorting Activity</h1>
+    <div id="sentence-input">
+        <label for="sentence">Enter a sentence:</label>
+        <input type="text" id="sentence" placeholder="Type your sentence here...">
+        <button onclick="startActivity()">Create Sorting Activity</button>
+    </div>
 
-    <nav>
-        <ul>
-            <li><a href="https://auntieat.github.io/Sentence-Sorter/" target="_blank">Sentence Sorting Activity</a></li>
-            <li><a href="#">App 2</a></li>
-            <li><a href="#">App 3</a></li>
-            <li><a href="#">App 4</a></li>
-        </ul>
-    </nav>
+    <div id="sortable-container"></div>
 
-    <section>
-        <h2>Welcome to the SLS AT Team Support Site!</h2>
-        <p>Here are some interactive Conventional Literacy activites. Here is a description of the apps:</p>
-        
-        <h3>App 1 - Sentence Sorting Activity</h3>
-        <p>This is an interactive smartboard activity for Day 5 of Predictable Chart Writing: Be The Sentence. Enter one of the student’s sentence in the box and click Create Sorting Activity. Ask students to arrange the words to match their sentence or indicate to a partner how they want the words ordered. Repeat with each of the students’ sentences.
- . Click the link above to access it.</p>
-    </section>
+    <div id="sentence-line"></div>
 
-    <footer>
-        <p>&copy; 2025 SLS AT Team. All rights reserved.</p>
-    </footer>
+    <button id="done-button" onclick="resetActivity()">Start Over</button>
+
+    <script>
+        let draggedElement;
+
+        function startActivity() {
+            const sentenceInput = document.getElementById('sentence').value.trim();
+            if (!sentenceInput) {
+                alert('Please enter a sentence.');
+                return;
+            }
+
+            // Hide the sentence input area
+            document.getElementById('sentence-input').style.display = 'none';
+
+            // Show the done button
+            document.getElementById('done-button').style.display = 'block';
+
+            const words = sentenceInput.split(' ');
+            const container = document.getElementById('sortable-container');
+            const sentenceLine = document.getElementById('sentence-line');
+
+            container.innerHTML = '';
+            sentenceLine.innerHTML = '';
+
+            // Create multiple incorrect variations
+            const incorrectSentences = generateRandomSentences(words);
+
+            // Randomly choose one correct and one incorrect sentence
+            const allSentences = [words, ...incorrectSentences];
+            const selectedSentence = allSentences[Math.floor(Math.random() * allSentences.length)];
+
+            selectedSentence.forEach(word => {
+                const wordBox = document.createElement('div');
+                wordBox.textContent = word;
+                wordBox.className = 'word-box draggable';
+                wordBox.draggable = true;
+                wordBox.addEventListener('dragstart', handleDragStart);
+                wordBox.addEventListener('dragend', handleDragEnd);
+                container.appendChild(wordBox);
+
+                const placeholderBox = document.createElement('div');
+                placeholderBox.className = 'placeholder-box';
+                placeholderBox.addEventListener('dragover', handleDragOver);
+                placeholderBox.addEventListener('drop', handleDrop);
+                sentenceLine.appendChild(placeholderBox);
+            });
+        }
+
+        function generateRandomSentences(words) {
+            const sentences = [];
+            for (let i = 0; i < 3; i++) {
+                const shuffledWords = words.slice().sort(() => Math.random() - 0.5); // Randomly shuffle words
+                sentences.push(shuffledWords);
+            }
+            return sentences;
+        }
+
+        function handleDragStart(event) {
+            draggedElement = event.target;
+            event.target.classList.add('placeholder');
+            setTimeout(() => {
+                event.target.style.visibility = 'hidden';
+            }, 100); // Slight delay to slow the appearance in the sentence line
+        }
+
+        function handleDragEnd(event) {
+            event.target.classList.remove('placeholder');
+            event.target.style.visibility = 'visible';
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            if (event.target.classList.contains('placeholder-box') && !event.target.hasChildNodes()) {
+                event.target.appendChild(draggedElement);
+            }
+        }
+
+        function resetActivity() {
+            // Reset the sentence input area
+            document.getElementById('sentence-input').style.display = 'block';
+
+            // Hide the done button
+            document.getElementById('done-button').style.display = 'none';
+
+            // Clear the containers
+            document.getElementById('sortable-container').innerHTML = '';
+            document.getElementById('sentence-line').innerHTML = '';
+
+            // Clear the input field
+            document.getElementById('sentence').value = '';
+        }
+    </script>
 </body>
 </html>
